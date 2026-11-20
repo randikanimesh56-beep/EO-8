@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>Forex Signal Desk — Market Structure & Order Flow</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#121c2d;--panel2:#0d1728;--line:#26364e;--muted:#91a4bf;--text:#eef4ff;--green:#20c997;--red:#ff647c;--gold:#f3c66d;--blue:#69a8ff;--purple:#b99aff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{max-width:980px;margin:auto;padding:12px}header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}h1{font-size:1.12rem;margin:0;font-weight:760}.sub{font-size:.78rem;color:var(--muted);margin-top:3px}.badge{font-size:.72rem;border:1px solid var(--line);padding:5px 8px;border-radius:999px;color:var(--gold);white-space:nowrap}.top-grid{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:8px}.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px;min-width:0}.control{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px}.label{display:block;font-size:.72rem;color:var(--muted);margin-bottom:4px}select,input,button{width:100%;min-width:0;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:8px;font:inherit;font-size:.82rem}button{background:#2858cb;border:0;font-weight:700;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.signal{font-size:1.55rem;line-height:1.2;font-weight:850;margin:2px 0}.buy{color:var(--green)}.sell{color:var(--red)}.wait{color:var(--gold)}.big{font-size:1.32rem;font-weight:780;overflow-wrap:anywhere}.muted{color:var(--muted)}.tiny{font-size:.71rem;color:var(--muted)}.status{font-size:.76rem;margin-top:8px;overflow-wrap:anywhere}.chart-card{margin-top:8px}.chart-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px}.chart-head strong{font-size:.83rem}canvas{width:100%;display:block}.main-chart{height:250px}.row-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:8px}.stat{padding:8px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;min-width:0}.stat span{display:block;color:var(--muted);font-size:.68rem}.stat b{display:block;margin-top:3px;font-size:.88rem;overflow-wrap:anywhere}.section{margin-top:8px}.section summary{cursor:pointer;list-style:none;font-weight:750;font-size:.84rem;display:flex;justify-content:space-between;gap:10px}.section summary::-webkit-details-marker{display:none}.section summary:after{content:'＋';color:var(--muted)}.section[open] summary:after{content:'−'}.section-body{border-top:1px solid var(--line);margin-top:9px;padding-top:9px}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mini-title{font-size:.75rem;font-weight:750;margin-bottom:6px}.table-wrap{overflow:auto;max-width:100%}table{width:100%;border-collapse:collapse;font-size:.75rem;white-space:nowrap}th,td{text-align:right;padding:6px 7px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-weight:650}.note{font-size:.72rem;color:var(--muted);line-height:1.5;margin-top:7px}.pill{display:inline-block;border-radius:999px;padding:2px 7px;border:1px solid var(--line);font-size:.68rem}.ok{color:var(--green)}.warn{color:var(--gold)}.bad{color:var(--red)}.import-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.filebox{background:var(--panel2);border:1px dashed var(--line);border-radius:9px;padding:9px}.filebox input{padding:6px;font-size:.72rem}.footer{font-size:.68rem;color:var(--muted);margin:10px 2px 4px}.hidden{display:none!important}
+@media(max-width:680px){main{padding:9px}.control{grid-template-columns:1fr 1fr}.top-grid{grid-template-columns:1fr 1fr}.top-grid .signal-card{grid-column:span 2}.row-stats{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}.main-chart{height:210px}.badge{font-size:.65rem}}
+</style>
+</head>
+<body>
+<main>
+<header>
+ <div><h1>Forex Signal Desk</h1><div class="sub">EUR/USD · Market Structure + Liquidity + Order Flow</div></div>
+ <div class="badge">SIGNALS ONLY · MANUAL TRADE CONFIRMATION</div>
+</header>
+<section class="card">
+ <div class="control">
+  <div><label class="label" for="market">Market</label><select id="market"><option value="frxEURUSD">EUR/USD · Real market</option></select></div>
+  <div><label class="label">Analysis</label><input value="1-minute candles" disabled></div>
+  <div><label class="label">Expiry tests</label><input value="1m + 2m" disabled></div>
+  <div><label class="label" for="minScore">Min. rule score</label><select id="minScore"><option value="65">65 / 100</option><option value="70" selected>70 / 100</option><option value="80">80 / 100</option></select></div>
+ </div>
+ <button id="connectBtn">Connect Deriv market data</button>
+ <div id="connectionStatus" class="status muted" role="status" aria-live="polite">Not connected. Connect to load public EUR/USD prices.</div>
+</section>
+<section class="top-grid" style="margin-top:8px">
+ <div class="card"><span class="label">Live Deriv price</span><div class="big" id="livePrice">—</div><div class="tiny" id="liveTime">Waiting for ticks</div></div>
+ <div class="card"><span class="label">Last closed 1m candle</span><div class="big" id="closedPrice">—</div><div class="tiny" id="closedTime">Waiting for candles</div></div>
+ <div class="card signal-card"><span class="label">Current signal</span><div id="signal" class="signal wait">WAIT</div><div class="tiny" id="signalReason">Waiting for market data</div><div class="tiny" id="signalType" style="margin-top:4px">No active setup</div></div>
+</section>
+<section class="card chart-card">
+ <div class="chart-head"><strong>EUR/USD · 1-minute price structure</strong><span class="tiny" id="trendBadge">5m bias: —</span></div>
+ <canvas id="priceChart" class="main-chart" width="940" height="250" aria-label="EUR/USD candlestick chart with EMA20"></canvas>
+ <div class="tiny">Completed candles only · EMA20 overlay · Chart data supplied by Deriv public feed</div>
+</section>
+<section class="row-stats">
+ <div class="stat"><span>5m trend / ADX14</span><b id="trendValue">—</b></div>
+ <div class="stat"><span>1m ATR14</span><b id="atrValue">—</b></div>
+ <div class="stat"><span>Continuation setup</span><b id="contValue">WAIT</b></div>
+ <div class="stat"><span>Liquidity reversal</span><b id="revValue">WAIT</b></div>
+</section>
+<details class="card section">
+ <summary>Strategy diagnostics <span class="tiny">5m regime · 1m entries</span></summary>
+ <div class="section-body">
+  <div class="two-col">
+   <div><div class="mini-title">Trend continuation</div><div class="stat"><span>5m EMA20 / EMA50</span><b id="emaTrend">—</b></div><div class="stat" style="margin-top:6px"><span>ADX14 and directional movement</span><b id="adxTrend">—</b></div><div class="stat" style="margin-top:6px"><span>Pullback + closed-candle break</span><b id="contReason">Waiting for data</b></div></div>
+   <div><div class="mini-title">Liquidity reversal</div><div class="stat"><span>Recent liquidity sweep</span><b id="sweepValue">—</b></div><div class="stat" style="margin-top:6px"><span>Structure break confirmation</span><b id="bosValue">—</b></div><div class="stat" style="margin-top:6px"><span>Reversal setup explanation</span><b id="revReason">Waiting for data</b></div></div>
+  </div>
+  <div class="note">The two strategies are evaluated separately. If they disagree, the engine returns WAIT. A signal is not a win-rate forecast.</div>
+ </div>
+</details>
+<details class="card section">
+ <summary>Order Flow tools <span class="tiny">Tick proxy + optional provider CSV imports</span></summary>
+ <div class="section-body">
+  <div class="row-stats" style="margin-top:0">
+   <div class="stat"><span>Tick up / down count</span><b id="tickCounts">—</b></div>
+   <div class="stat"><span>Delta / CVD status</span><b id="cvdValue">Tick proxy</b></div>
+   <div class="stat"><span>Footprint source</span><b id="footprintSource">No trade-print file</b></div>
+   <div class="stat"><span>DOM source</span><b id="domSource">Not connected</b></div>
+  </div>
+  <div class="two-col" style="margin-top:9px">
+   <div class="stat"><div class="mini-title">Footprint / Volume Profile</div><div class="tiny" id="footprintSummary">Deriv ticks do not contain aggressor-side traded volume. Import a licensed trade-print CSV for real bid/ask volume analysis.</div><div class="tiny" id="vpSummary" style="margin-top:5px">POC / VAH / VAL: unavailable without actual trade volume</div><div class="table-wrap" style="margin-top:6px"><table><thead><tr><th>Price</th><th>Buy vol</th><th>Sell vol</th><th>Delta</th></tr></thead><tbody id="footprintRows"><tr><td colspan="4" class="muted">No actual footprint data</td></tr></tbody></table></div></div>
+   <div class="stat"><div class="mini-title">DOM / Liquidity Heatmap</div><div class="tiny" id="domSummary">A real order book is not supplied by the Deriv tick feed. Import Level 2 snapshots to populate DOM and heatmap.</div><div class="table-wrap" style="margin-top:6px"><table><thead><tr><th>Price</th><th>Bid size</th><th>Ask size</th></tr></thead><tbody id="domRows"><tr><td colspan="3" class="muted">No DOM snapshot loaded</td></tr></tbody></table></div></div>
+  </div>
+  <div class="mini-title" style="margin-top:10px">Liquidity heatmap · imported DOM snapshots</div>
+  <canvas id="heatmap" width="940" height="150" style="height:140px;background:#0a1422;border-radius:8px"></canvas>
+  <div class="import-grid" style="margin-top:9px">
+   <div class="filebox"><label class="label" for="tradesFile">Import trade prints CSV</label><input type="file" id="tradesFile" accept=".csv,text/csv"><div class="tiny">Required headers: timestamp, price, side (buy/sell), volume. Use aggressor-side classifications from your provider.</div></div>
+   <div class="filebox"><label class="label" for="domFile">Import DOM snapshots CSV</label><input type="file" id="domFile" accept=".csv,text/csv"><div class="tiny">Required headers: timestamp, price, bid_size, ask_size. Multiple timestamps create a heatmap.</div></div>
+  </div>
+  <div class="note"><b>Source honesty:</b> Without a licensed futures/spot order-flow provider, Deriv tick direction is only a tick-imbalance proxy (not actual CVD). Tick activity by price is not real traded volume. DOM and liquidity heatmap remain unavailable until Level 2 snapshots are imported. CME 6E feeds may require paid exchange data rights and a server-side connector.</div>
+ </div>
+</details>
+<details class="card section">
+ <summary>Signal history & 1m / 2m outcome tracking</summary>
+ <div class="section-body">
+  <div class="row-stats" style="margin-top:0">
+   <div class="stat"><span>1m tracked</span><b id="oneCount">0</b></div><div class="stat"><span>1m correct</span><b id="oneRate">—</b></div><div class="stat"><span>2m tracked</span><b id="twoCount">0</b></div><div class="stat"><span>2m correct</span><b id="twoRate">—</b></div>
+  </div>
+  <div class="table-wrap" style="margin-top:9px"><table><thead><tr><th>Sri Lanka time</th><th>Strategy</th><th>Signal</th><th>Entry</th><th>Expiry</th><th>Deriv result proxy</th></tr></thead><tbody id="historyRows"><tr><td colspan="6" class="muted">No signals tracked in this browser session</td></tr></tbody></table></div>
+  <div class="note">1m and 2m results are measured using the first available Deriv tick at or after each expiry. They are not Expert Option execution results and do not account for Expert Option quote differences, payout, spread or execution.</div>
+ </div>
+</details>
+<details class="card section">
+ <summary>Settings & method notes</summary>
+ <div class="section-body">
+  <div class="two-col">
+   <div><div class="mini-title">Manual high-impact news pause</div><label class="label" for="newsTime">Next event time · Sri Lanka local time</label><input type="datetime-local" id="newsTime"><label class="label" for="newsWindow" style="margin-top:6px">Pause before / after (minutes)</label><select id="newsWindow"><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option></select><div class="tiny">Manual pause only. No live economic calendar API is connected.</div></div>
+   <div><div class="mini-title">Data connections</div><div class="stat"><span>Primary live data</span><b class="ok">Deriv public feed</b></div><div class="stat" style="margin-top:6px"><span>Second spot-price feed</span><b class="warn">Not connected</b></div><div class="stat" style="margin-top:6px"><span>CME 6E Level 2</span><b class="warn">CSV import connector only</b></div></div>
+  </div>
+  <div class="note">Strategy rules: 5m EMA20/50 and ADX14 regime; 1m pullback/reclaim and closed-candle break for continuation; recent 10-candle liquidity sweep followed by structure break for reversal; ATR14 volatility and extension guard; live tick confirmation. All thresholds are initial research parameters and require historical and demo validation. No trade is placed automatically.</div>
+ </div>
+</details>
+<div class="footer">Educational decision-support tool only. No guarantee of profitable signals. Do not use real money based only on this dashboard.</div>
+</main>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const WS_URL = 'wss://api.derivws.com/trading/v1/options/ws/public';
+const SYMBOL = 'frxEURUSD', TF = 60, CANDLE_COUNT = 500, REFRESH_MS = 25000;
+let socket = null, candles = [], ticks = [], connected = false, fetching = false, lastFetch = 0, reqId = 100, activeReqId = null, generation = 0;
+let tradePrints = [], domSnapshots = [], historyRows = [], pendingOutcomes = [], lastSignalKey = '';
+let latestEvaluation = null;
+const $status = s => { $('connectionStatus').textContent = s; };
+const fmt = n => Number.isFinite(Number(n)) ? Number(n).toFixed(5) : '—';
+const slTime = sec => new Date(sec * 1000).toLocaleString('en-GB', { timeZone:'Asia/Colombo', hour12:false });
+const median = xs => { const a=xs.filter(Number.isFinite).slice().sort((x,y)=>x-y); if(!a.length)return 0; const m=Math.floor(a.length/2); return a.length%2?a[m]:(a[m-1]+a[m])/2; };
+function send(obj){ if(!socket || socket.readyState!==WebSocket.OPEN) throw new Error('Deriv socket is not open'); socket.send(JSON.stringify(obj)); }
+function ema(values, period){ if(!values.length)return []; const k=2/(period+1); let v=values[0]; const out=[v]; for(let i=1;i<values.length;i++){v=values[i]*k+v*(1-k);out.push(v);} return out; }
+function atrSeries(data, period=14){ const tr=data.map((c,i)=>i===0?c.high-c.low:Math.max(c.high-c.low,Math.abs(c.high-data[i-1].close),Math.abs(c.low-data[i-1].close))); const out=Array(data.length).fill(null); if(data.length<period)return out; let v=tr.slice(0,period).reduce((a,b)=>a+b,0)/period; out[period-1]=v; for(let i=period;i<tr.length;i++){v=(v*(period-1)+tr[i])/period;out[i]=v;} return out; }
+function adxSeries(data, period=14){
+ const n=data.length, tr=Array(n).fill(0), pdm=Array(n).fill(0), mdm=Array(n).fill(0), pdi=Array(n).fill(null), mdi=Array(n).fill(null), dx=Array(n).fill(null), adx=Array(n).fill(null);
+ if(n<period*2+2)return {adx,pdi,mdi};
+ for(let i=1;i<n;i++){const up=data[i].high-data[i-1].high,down=data[i-1].low-data[i].low;tr[i]=Math.max(data[i].high-data[i].low,Math.abs(data[i].high-data[i-1].close),Math.abs(data[i].low-data[i-1].close));pdm[i]=up>down&&up>0?up:0;mdm[i]=down>up&&down>0?down:0;}
+ let st=tr.slice(1,period+1).reduce((a,b)=>a+b,0),sp=pdm.slice(1,period+1).reduce((a,b)=>a+b,0),sm=mdm.slice(1,period+1).reduce((a,b)=>a+b,0);
+ for(let i=period;i<n;i++){if(i>period){st=st-st/period+tr[i];sp=sp-sp/period+pdm[i];sm=sm-sm/period+mdm[i];}if(st>0){pdi[i]=100*sp/st;mdi[i]=100*sm/st;const den=pdi[i]+mdi[i];dx[i]=den?100*Math.abs(pdi[i]-mdi[i])/den:0;}}
+ const start=period*2-1;if(start<n){let first=dx.slice(period,start+1).filter(Number.isFinite);if(first.length===period){let v=first.reduce((a,b)=>a+b,0)/period;adx[start]=v;for(let i=start+1;i<n;i++){if(Number.isFinite(dx[i])){v=(v*(period-1)+dx[i])/period;adx[i]=v;}}}}
+ return {adx,pdi,mdi};
+}
+function aggregate5m(data){
+ const groups=new Map(); for(const c of data){const bucket=Math.floor(c.epoch/300)*300;if(!groups.has(bucket))groups.set(bucket,[]);groups.get(bucket).push(c);}
+ const out=[]; for(const [epoch,arr] of [...groups.entries()].sort((a,b)=>a[0]-b[0])){arr.sort((a,b)=>a.epoch-b.epoch);if(arr.length!==5)continue;let complete=true;for(let i=0;i<5;i++)if(arr[i].epoch!==epoch+i*60)complete=false;if(!complete)continue;out.push({epoch,open:arr[0].open,high:Math.max(...arr.map(x=>x.high)),low:Math.min(...arr.map(x=>x.low)),close:arr[4].close});}
+ return out;
+}
+function tickMomentum(){if(ticks.length<2)return {ok:false,dir:0,change:0,age:0};const now=ticks[ticks.length-1];let old=null;for(let i=ticks.length-2;i>=0;i--){if(now.epoch-ticks[i].epoch>=20){old=ticks[i];break;}}if(!old)return {ok:false,dir:0,change:0,age:0};const age=now.epoch-old.epoch,change=now.quote-old.quote;return {ok:age>=15&&age<=80,dir:Math.sign(change),change,age};}
+function currentTickProxy(){const end=ticks.length?ticks[ticks.length-1].epoch:0,src=ticks.filter(t=>end-t.epoch<=300);let up=0,down=0,flat=0;const levels=new Map();for(let i=1;i<src.length;i++){const a=src[i-1],b=src[i],dir=Math.sign(b.quote-a.quote);if(dir>0)up++;else if(dir<0)down++;else flat++;const key=(Math.round(b.quote/0.0001)*0.0001).toFixed(5);if(!levels.has(key))levels.set(key,{up:0,down:0,count:0});const q=levels.get(key);if(dir>0)q.up++;else if(dir<0)q.down++;q.count++;}return {up,down,flat,delta:up-down,levels};}
+function volumeProfile(){if(!tradePrints.length)return null;const levels=new Map();let total=0;for(const t of tradePrints){const key=Number((Math.round(t.price/0.0001)*0.0001).toFixed(5));levels.set(key,(levels.get(key)||0)+t.volume);total+=t.volume;}const rows=[...levels.entries()].sort((a,b)=>a[0]-b[0]);if(!rows.length||!total)return null;let pocIndex=0;for(let i=1;i<rows.length;i++)if(rows[i][1]>rows[pocIndex][1])pocIndex=i;const target=total*.70;let lo=pocIndex,hi=pocIndex,acc=rows[pocIndex][1];while(acc<target&&(lo>0||hi<rows.length-1)){const down=lo>0?rows[lo-1][1]:-1,up=hi<rows.length-1?rows[hi+1][1]:-1;if(up>=down&&hi<rows.length-1){hi++;acc+=rows[hi][1];}else if(lo>0){lo--;acc+=rows[lo][1];}else break;}return {poc:rows[pocIndex][0],vah:rows[hi][0],val:rows[lo][0],total};}
+function importedFlow(nowEpoch){const from=nowEpoch-300;const recent=tradePrints.filter(x=>x.epoch>=from&&x.epoch<=nowEpoch+5);if(!recent.length)return {available:false,stale:tradePrints.length>0,delta:0,buy:0,sell:0,cvd:tradePrints.reduce((s,x)=>s+(x.side==='buy'?x.volume:-x.volume),0),levels:new Map(),last:tradePrints.length?tradePrints[tradePrints.length-1].epoch:0};const levels=new Map();let buy=0,sell=0;for(const t of recent){const key=(Math.round(t.price/0.0001)*0.0001).toFixed(5);if(!levels.has(key))levels.set(key,{buy:0,sell:0});const q=levels.get(key);if(t.side==='buy'){buy+=t.volume;q.buy+=t.volume;}else{sell+=t.volume;q.sell+=t.volume;}}const last=Math.max(...recent.map(x=>x.epoch)),cvd=tradePrints.reduce((s,x)=>s+(x.side==='buy'?x.volume:-x.volume),0);return {available:true,stale:nowEpoch-last>90,delta:buy-sell,buy,sell,cvd,levels,last};}
+function newestDOM(){if(!domSnapshots.length)return {available:false,levels:[],epoch:0,imbalance:0};const epoch=Math.max(...domSnapshots.map(x=>x.epoch));const rows=domSnapshots.filter(x=>x.epoch===epoch).sort((a,b)=>b.price-a.price);const bid=rows.reduce((s,x)=>s+x.bid,0),ask=rows.reduce((s,x)=>s+x.ask,0);return {available:true,levels:rows,epoch,imbalance:(bid+ask)?(bid-ask)/(bid+ask):0,bid,ask};}
+function candleStrength(c){const range=Math.max(c.high-c.low,1e-12);return Math.abs(c.close-c.open)/range;}
+function strategyAnalysis(data){
+ const minBars=300;if(data.length<minBars)return {ready:false,reason:'Need more 1m history (about 5 hours)'};
+ const close=data.map(x=>x.close),ema20=ema(close,20),atr=atrSeries(data,14),i=data.length-1,last=data[i],prev=data[i-1],atrNow=atr[i],atrAvg=median(atr.filter(Number.isFinite).slice(-30));
+ if(!Number.isFinite(atrNow)||!Number.isFinite(ema20[i]))return {ready:false,reason:'Waiting for ATR/EMA calculation'};
+ const five=aggregate5m(data),c5=five.map(x=>x.close),e20=ema(c5,20),e50=ema(c5,50),a=adxSeries(five,14),j=five.length-1;
+ if(j<55||!Number.isFinite(a.adx[j]))return {ready:false,reason:'Waiting for completed 5m regime candles'};
+ const trendDir=e20[j]>e50[j]&&a.pdi[j]>a.mdi[j]?1:e20[j]<e50[j]&&a.mdi[j]>a.pdi[j]?-1:0;
+ const trendStrong=a.adx[j]>=18;
+ const atrOk=atrAvg>0&&atrNow>=atrAvg*.45&&atrNow<=atrAvg*2.4;
+ const notExtended=Math.abs(last.close-ema20[i])<=atrNow*1.15;
+ // Continuation: a prior pullback/retest, followed by a closed candle body break in the 5m regime direction.
+ const recent=data.slice(-6,-1);let pullbackBuy=false,pullbackSell=false;
+ for(const c of recent){if(c.low<=ema20[i]+atrNow*.35&&c.close>=ema20[i]-atrNow*.75)pullbackBuy=true;if(c.high>=ema20[i]-atrNow*.35&&c.close<=ema20[i]+atrNow*.75)pullbackSell=true;}
+ const bullBreak=last.close>ema20[i]&&last.close>prev.high&&last.close>last.open&&candleStrength(last)>=.5;
+ const bearBreak=last.close<ema20[i]&&last.close<prev.low&&last.close<last.open&&candleStrength(last)>=.5;
+ const continuation=trendStrong&&atrOk&&notExtended&&((trendDir===1&&pullbackBuy&&bullBreak)?'BUY':(trendDir===-1&&pullbackSell&&bearBreak)?'SELL':'WAIT');
+ let continuationReason='No completed pullback-and-break setup';if(!trendStrong)continuationReason='5m trend strength below ADX 18';else if(!atrOk)continuationReason='ATR outside volatility guard';else if(!notExtended)continuationReason='Price too extended from 1m EMA20';else if(continuation==='BUY')continuationReason='5m bullish regime + 1m pullback + bullish break';else if(continuation==='SELL')continuationReason='5m bearish regime + 1m pullback + bearish break';
+ // Reversal: one of the prior 4 candles sweeps a previous 10-candle extreme and closes back inside; latest candle confirms a local structure break.
+ let sweepSide='NONE',sweepPrice=null,sweepAt=-1;
+ for(let k=Math.max(10,data.length-5);k<data.length-1;k++){
+  const base=data.slice(k-10,k);if(base.length<10)continue;const priorLow=Math.min(...base.map(x=>x.low)),priorHigh=Math.max(...base.map(x=>x.high)),c=data[k];
+  if(c.low<priorLow&&c.close>priorLow){sweepSide='BUY';sweepPrice=priorLow;sweepAt=k;}
+  if(c.high>priorHigh&&c.close<priorHigh){sweepSide='SELL';sweepPrice=priorHigh;sweepAt=k;}
+ }
+ const afterSweep=data.slice(sweepAt+1,data.length-1);const buyBosLevel=afterSweep.length?Math.max(...afterSweep.map(x=>x.high)):data[data.length-2].high;const sellBosLevel=afterSweep.length?Math.min(...afterSweep.map(x=>x.low)):data[data.length-2].low;
+ const reversal= sweepSide==='BUY'&&last.close>buyBosLevel&&last.close>last.open&&candleStrength(last)>=.5?'BUY':sweepSide==='SELL'&&last.close<sellBosLevel&&last.close<last.open&&candleStrength(last)>=.5?'SELL':'WAIT';
+ let reversalReason='No sweep followed by a confirmed structure break';if(sweepSide!=='NONE'&&reversal==='WAIT')reversalReason='Sweep detected; waiting for opposite structure break';else if(reversal==='BUY')reversalReason='Sell-side liquidity sweep + bullish structure break';else if(reversal==='SELL')reversalReason='Buy-side liquidity sweep + bearish structure break';
+ return {ready:true,ema20:ema20[i],atr:atrNow,atrAvg,atrOk,notExtended,trendDir,trendStrong,trendAdx:a.adx[j],pdi:a.pdi[j],mdi:a.mdi[j],fiveE20:e20[j],fiveE50:e50[j],continuation,continuationReason,reversal,reversalReason,sweepSide,sweepPrice,buyBosLevel,sellBosLevel,last,ema20Series:ema20,fiveCount:five.length};
+}
+function makeDecision(data){
+ const s=strategyAnalysis(data);if(!s.ready)return {signal:'WAIT',score:0,reason:s.reason||'Waiting for enough candles',strategy:'—',s};
+ const mom=tickMomentum(),now=ticks.length?ticks[ticks.length-1].epoch:Math.floor(Date.now()/1000),flow=importedFlow(now),dom=newestDOM();
+ const picks=[];if(s.continuation!=='WAIT')picks.push({side:s.continuation,name:'Trend Continuation',base:70});if(s.reversal!=='WAIT')picks.push({side:s.reversal,name:'Liquidity Reversal',base:72});
+ if(!picks.length)return {signal:'WAIT',score:0,reason:s.continuationReason+'; '+s.reversalReason,strategy:'No setup',s,mom,flow,dom};
+ const sides=new Set(picks.map(x=>x.side));if(sides.size>1)return {signal:'WAIT',score:0,reason:'Trend Continuation and Liquidity Reversal disagree',strategy:'Conflicting setups',s,mom,flow,dom};
+ const chosen=picks.sort((a,b)=>b.base-a.base)[0],side=chosen.side;
+ const tickAligned=mom.ok&&mom.dir===(side==='BUY'?1:-1);
+ const realFlowFresh=flow.available&&!flow.stale;
+ const flowAligned=realFlowFresh&&((side==='BUY'&&flow.delta>0)||(side==='SELL'&&flow.delta<0));
+ const domFresh=dom.available&&now-dom.epoch<=60;
+ const domAligned=domFresh&&((side==='BUY'&&dom.imbalance>0.08)||(side==='SELL'&&dom.imbalance<-.08));
+ let score=chosen.base+(tickAligned?15:0)+(flowAligned?8:0)+(domAligned?5:0);
+ const newsInput=$('newsTime').value;let newsBlocked=false;if(newsInput){const eventMs=new Date(newsInput).getTime();if(Number.isFinite(eventMs)){const windowMs=(Number($('newsWindow').value)||15)*60000;newsBlocked=Math.abs(Date.now()-eventMs)<=windowMs;}}
+ let reason='';if(newsBlocked)reason='Manual high-impact news pause is active';else if(!s.atrOk)reason='ATR volatility guard blocked the setup';else if(!s.notExtended&&chosen.name==='Trend Continuation')reason='Entry is too extended from EMA20';else if(!mom.ok)reason='Waiting for fresh live-tick confirmation';else if(!tickAligned)reason='Live tick momentum does not confirm setup direction';else if(score<Number($('minScore').value))reason='Confluence score below selected minimum';else reason=chosen.name+' confirmed by closed candles and live ticks';
+ const signal=(!newsBlocked&&s.atrOk&&tickAligned&&score>=Number($('minScore').value))?side:'WAIT';
+ return {signal,score,reason,strategy:chosen.name,s,mom,flow,dom,tickAligned,flowAligned,domAligned};
+}
+function setSignalUI(e){latestEvaluation=e;$('signal').textContent=e.signal;$('signal').className='signal '+(e.signal==='BUY'?'buy':e.signal==='SELL'?'sell':'wait');$('signalReason').textContent=e.reason;$('signalType').textContent=e.signal==='WAIT'?'No confirmed entry':e.strategy+' · rule score '+e.score+'/100';}
+function drawChart(data,emaValues){const c=$('priceChart'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#0a1422';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#24344b';ctx.lineWidth=1;for(let r=0;r<5;r++){const y=12+r*(h-26)/4;ctx.beginPath();ctx.moveTo(42,y);ctx.lineTo(w-8,y);ctx.stroke();}if(!data.length)return;const view=data.slice(-75),start=data.length-view.length,lo=Math.min(...view.map(x=>x.low)),hi=Math.max(...view.map(x=>x.high)),pad=(hi-lo)*.08||.0002,min=lo-pad,max=hi+pad;const X=i=>42+i*(w-54)/Math.max(1,view.length-1),Y=p=>10+(max-p)*(h-22)/(max-min);ctx.font='11px system-ui';ctx.fillStyle='#91a4bf';ctx.fillText(max.toFixed(5),2,13);ctx.fillText(min.toFixed(5),2,h-3);const step=(w-54)/view.length;for(let i=0;i<view.length;i++){const c0=view[i],x=X(i),up=c0.close>=c0.open;ctx.strokeStyle=up?'#20c997':'#ff647c';ctx.fillStyle=up?'#20c997':'#ff647c';ctx.beginPath();ctx.moveTo(x,Y(c0.high));ctx.lineTo(x,Y(c0.low));ctx.stroke();const top=Y(Math.max(c0.open,c0.close)),bottom=Y(Math.min(c0.open,c0.close)),body=Math.max(1,bottom-top);ctx.fillRect(x-Math.max(1,step*.28),top,Math.max(2,step*.56),body);}if(emaValues&&emaValues.length>=data.length){ctx.strokeStyle='#b99aff';ctx.lineWidth=1.6;ctx.beginPath();view.forEach((c0,i)=>{const y=Y(emaValues[start+i]);if(i===0)ctx.moveTo(X(i),y);else ctx.lineTo(X(i),y);});ctx.stroke();}}
+function drawHeatmap(){const c=$('heatmap'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#0a1422';ctx.fillRect(0,0,w,h);if(!domSnapshots.length){ctx.fillStyle='#91a4bf';ctx.font='13px system-ui';ctx.fillText('No Level 2 snapshots loaded',12,28);return;}const epochs=[...new Set(domSnapshots.map(x=>x.epoch))].sort((a,b)=>a-b).slice(-48),prices=[...new Set(domSnapshots.map(x=>Math.round(x.price/0.0001)*0.0001))].sort((a,b)=>a-b).slice(-35);if(!epochs.length||!prices.length)return;const cw=(w-55)/epochs.length,ch=(h-20)/prices.length;const max= Math.max(1,...domSnapshots.map(x=>x.bid+x.ask));for(let i=0;i<epochs.length;i++){const group=domSnapshots.filter(x=>x.epoch===epochs[i]);for(let j=0;j<prices.length;j++){const row=group.find(x=>Math.abs(x.price-prices[j])<0.000051);if(!row)continue;const intensity=Math.min(1,(row.bid+row.ask)/max);ctx.fillStyle=row.bid>=row.ask?`rgba(32,201,151,${.10+intensity*.75})`:`rgba(255,100,124,${.10+intensity*.75})`;ctx.fillRect(48+i*cw,8+j*ch,Math.max(1,cw-1),Math.max(1,ch-1));}}ctx.fillStyle='#91a4bf';ctx.font='10px system-ui';ctx.fillText('Older',6,h-5);ctx.fillText('Latest',w-42,h-5);}
+function renderFlow(){const now=ticks.length?ticks[ticks.length-1].epoch:Math.floor(Date.now()/1000),proxy=currentTickProxy(),flow=importedFlow(now),dom=newestDOM();$('tickCounts').textContent=proxy.up+' / '+proxy.down;$('cvdValue').textContent=tradePrints.length?'CVD '+(flow.cvd>=0?'+':'')+flow.cvd.toFixed(1):'Tick Δ proxy '+(proxy.delta>=0?'+':'')+proxy.delta;$('footprintSource').textContent=flow.available&&!flow.stale?'Trade-print CSV loaded':'Tick proxy only';
+ if(flow.available&&!flow.stale){$('footprintSummary').textContent='Imported signed trade volume · last 5m · Buy '+flow.buy.toFixed(1)+' / Sell '+flow.sell.toFixed(1)+' / Δ '+flow.delta.toFixed(1)+' · CVD '+flow.cvd.toFixed(1);const vp=volumeProfile();$('vpSummary').textContent=vp?'POC '+fmt(vp.poc)+' · VAH '+fmt(vp.vah)+' · VAL '+fmt(vp.val)+' · 70% value area':'Volume Profile unavailable';const rows=[...flow.levels.entries()].map(([price,q])=>({price,buy:q.buy,sell:q.sell,delta:q.buy-q.sell})).sort((a,b)=>b.price-a.price).slice(0,12);$('footprintRows').innerHTML=rows.map(r=>`<tr><td>${r.price}</td><td class="buy">${r.buy.toFixed(1)}</td><td class="sell">${r.sell.toFixed(1)}</td><td>${r.delta>=0?'+':''}${r.delta.toFixed(1)}</td></tr>`).join('');}
+ else{$('footprintSummary').textContent=flow.stale?'Imported prints are stale; not used for current confirmation.':'Deriv ticks provide price changes only. This is not real buy/sell volume.';$('vpSummary').textContent='POC / VAH / VAL: requires imported actual trade volume';const rows=[...proxy.levels.entries()].map(([price,q])=>({price,up:q.up,down:q.down})).sort((a,b)=>Number(b.price)-Number(a.price)).slice(0,8);$('footprintRows').innerHTML=rows.map(r=>`<tr><td>${r.price}</td><td class="buy">${r.up}</td><td class="sell">${r.down}</td><td>${r.up-r.down>=0?'+':''}${r.up-r.down}</td></tr>`).join('')||'<tr><td colspan="4">No tick activity yet</td></tr>';}
+ $('domSource').textContent=dom.available?'DOM CSV loaded':'Not connected';if(dom.available){$('domSummary').textContent='Latest snapshot · '+slTime(dom.epoch)+' · Bid '+dom.bid.toFixed(1)+' / Ask '+dom.ask.toFixed(1)+' · Imbalance '+(dom.imbalance*100).toFixed(1)+'%';$('domRows').innerHTML=dom.levels.slice(0,12).map(r=>`<tr><td>${fmt(r.price)}</td><td class="buy">${r.bid.toFixed(1)}</td><td class="sell">${r.ask.toFixed(1)}</td></tr>`).join('');}else{$('domSummary').textContent='A real order book is not supplied by Deriv ticks. Import Level 2 snapshots to populate DOM and heatmap.';$('domRows').innerHTML='<tr><td colspan="3">No DOM snapshot loaded</td></tr>';}
+ drawHeatmap();
+}
+function renderStrategy(e){const s=e.s;if(!s||!s.ready){$('trendBadge').textContent='5m bias: —';$('trendValue').textContent='—';$('emaTrend').textContent='—';$('adxTrend').textContent='—';$('atrValue').textContent='—';$('contValue').textContent='WAIT';$('revValue').textContent='WAIT';$('contReason').textContent=s?.reason||'Waiting';$('revReason').textContent=s?.reason||'Waiting';$('sweepValue').textContent='—';$('bosValue').textContent='—';return;}
+ const bias=s.trendDir===1?'BULLISH':s.trendDir===-1?'BEARISH':'NEUTRAL';$('trendBadge').textContent='5m bias: '+bias;$('trendValue').textContent=bias+' · ADX '+s.trendAdx.toFixed(1);$('emaTrend').textContent=fmt(s.fiveE20)+' / '+fmt(s.fiveE50);$('adxTrend').textContent=s.trendAdx.toFixed(1)+' · +DI '+s.pdi.toFixed(1)+' / −DI '+s.mdi.toFixed(1);$('atrValue').textContent=fmt(s.atr);$('contValue').textContent=s.continuation;$('contValue').className=s.continuation==='WAIT'?'warn':s.continuation==='BUY'?'buy':'sell';$('revValue').textContent=s.reversal;$('revValue').className=s.reversal==='WAIT'?'warn':s.reversal==='BUY'?'buy':'sell';$('contReason').textContent=s.continuationReason;$('revReason').textContent=s.reversalReason;$('sweepValue').textContent=s.sweepSide==='NONE'?'No recent sweep':s.sweepSide+' sweep near '+fmt(s.sweepPrice);$('bosValue').textContent=s.reversal==='WAIT'?'Not confirmed':s.reversal+' structure break';
+}
+function updateStats(){const one=historyRows.filter(x=>x.expiry===60),two=historyRows.filter(x=>x.expiry===120);function count(arr){const done=arr.filter(x=>x.result!=='Pending'),wins=done.filter(x=>x.result==='Correct').length;return {n:arr.length,rate:done.length?(wins/done.length*100).toFixed(1)+'%':'—'};}
+ const a=count(one),b=count(two);$('oneCount').textContent=a.n;$('oneRate').textContent=a.rate;$('twoCount').textContent=b.n;$('twoRate').textContent=b.rate;
+ $('historyRows').innerHTML=historyRows.slice(0,24).map(r=>`<tr><td>${slTime(r.epoch)}</td><td>${r.strategy}</td><td class="${r.side==='BUY'?'buy':'sell'}">${r.side}</td><td>${fmt(r.entry)}</td><td>${r.expiry/60}m</td><td>${r.result}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">No signals tracked in this browser session</td></tr>';
+}
+function addSignal(e){const t=ticks[ticks.length-1],bar=candles.filter(c=>c.epoch+60<=Math.floor(Date.now()/1000)).slice(-1)[0];if(!t||!bar||!['BUY','SELL'].includes(e.signal))return;const key=bar.epoch+':'+e.signal;if(key===lastSignalKey)return;lastSignalKey=key;for(const expiry of [60,120]){const row={epoch:t.epoch,strategy:e.strategy,side:e.signal,entry:t.quote,expiry,due:t.epoch+expiry,result:'Pending'};historyRows.unshift(row);pendingOutcomes.push(row);}historyRows=historyRows.slice(0,80);updateStats();}
+function settle(t){let changed=false;for(const r of pendingOutcomes){if(r.result!=='Pending'||t.epoch<r.due)continue;const delta=t.quote-r.entry;r.result=(r.side==='BUY'?delta>0:delta<0)?'Correct':delta===0?'Flat':'Incorrect';r.exit=t.quote;changed=true;}pendingOutcomes=pendingOutcomes.filter(x=>x.result==='Pending');if(changed)updateStats();}
+function render(){if(!candles.length)return;const now=Math.floor(Date.now()/1000);const closed=candles.filter(c=>c.epoch+60<=now);if(closed.length<300){$status('Connected. Accumulating completed 1m candles ('+closed.length+'/300) for a stable 5m trend calculation.');return;}
+ const e=makeDecision(closed),last=closed[closed.length-1],live=ticks[ticks.length-1];$('closedPrice').textContent=fmt(last.close);$('closedTime').textContent='Closed · Sri Lanka '+slTime(last.epoch);if(live){$('livePrice').textContent=fmt(live.quote);$('liveTime').textContent='Tick · Sri Lanka '+slTime(live.epoch);}setSignalUI(e);renderStrategy(e);const s=e.s;if(s&&s.ready)drawChart(closed.slice(-75),s.ema20Series.slice(-75));renderFlow();if(e.signal!=='WAIT')addSignal(e);}
+function requestCandles(){if(!socket||socket.readyState!==WebSocket.OPEN||fetching)return;fetching=true;const id=++reqId;activeReqId=id;try{send({ticks_history:SYMBOL,adjust_start_time:1,count:CANDLE_COUNT,end:'latest',style:'candles',granularity:TF,req_id:id});}catch(err){fetching=false;activeReqId=null;$status('History request failed: '+err.message);}}
+function onMessage(event,gen){if(gen!==generation)return;let msg;try{msg=JSON.parse(event.data);}catch{return;}if(msg.error){fetching=false;activeReqId=null;$status('Deriv error: '+(msg.error.code||'')+' '+msg.error.message);$('connectBtn').disabled=false;return;}
+ if(msg.msg_type==='tick'&&msg.tick){const t={epoch:Number(msg.tick.epoch),quote:Number(msg.tick.quote)};if(Number.isFinite(t.epoch)&&Number.isFinite(t.quote)){const last=ticks[ticks.length-1];if(!last||t.epoch>=last.epoch){ticks.push(t);ticks=ticks.filter(x=>x.epoch>=t.epoch-1200).slice(-6000);settle(t);if(candles.length)render();}}}
+ if((msg.msg_type==='candles'||msg.msg_type==='history')&&Array.isArray(msg.candles)){if(activeReqId!==null&&msg.req_id!==undefined&&msg.req_id!==activeReqId)return;const map=new Map(candles.map(c=>[c.epoch,c]));for(const z of msg.candles){const c={epoch:Number(z.epoch),open:Number(z.open),high:Number(z.high),low:Number(z.low),close:Number(z.close)};if(Number.isFinite(c.epoch)&&[c.open,c.high,c.low,c.close].every(Number.isFinite))map.set(c.epoch,c);}candles=[...map.values()].sort((a,b)=>a.epoch-b.epoch).slice(-CANDLE_COUNT);fetching=false;activeReqId=null;lastFetch=Date.now();$('connectBtn').disabled=false;$('connectBtn').textContent='Reconnect Deriv market data';render();$status('Connected · Deriv public EUR/USD · 1m candles + live ticks.');}
+}
+function disconnect(){if(socket){const old=socket;socket=null;old.onopen=old.onmessage=old.onerror=old.onclose=null;try{old.close();}catch{}}connected=false;}
+function reset(){candles=[];ticks=[];fetching=false;lastFetch=0;historyRows=[];pendingOutcomes=[];lastSignalKey='';latestEvaluation=null;$('livePrice').textContent='—';$('liveTime').textContent='Waiting for ticks';$('closedPrice').textContent='—';$('closedTime').textContent='Waiting for candles';$('signal').textContent='WAIT';$('signal').className='signal wait';$('signalReason').textContent='Waiting for market data';$('signalType').textContent='No active setup';updateStats();$('trendValue').textContent='—';$('atrValue').textContent='—';$('contValue').textContent='WAIT';$('revValue').textContent='WAIT';$('trendBadge').textContent='5m bias: —';drawChart([],[]);renderFlow();}
+function connect(){generation++;const gen=generation;disconnect();reset();$('connectBtn').disabled=true;$('connectBtn').textContent='Connecting…';$status('Connecting to Deriv public market-data WebSocket…');try{socket=new WebSocket(WS_URL);}catch(err){$status('WebSocket error: '+err.message);$('connectBtn').disabled=false;return;}socket.onopen=()=>{if(gen!==generation)return;connected=true;try{requestCandles();send({ticks:SYMBOL,subscribe:1,req_id:++reqId});$status('Connected. Loading EUR/USD history and live ticks…');}catch(err){$status(err.message);$('connectBtn').disabled=false;}};socket.onmessage=e=>onMessage(e,gen);socket.onerror=()=>{if(gen===generation)$status('WebSocket error. Check internet or Deriv service status.');};socket.onclose=e=>{if(gen!==generation)return;connected=false;fetching=false;$('connectBtn').disabled=false;$('connectBtn').textContent='Connect Deriv market data';$status('Connection closed (code '+e.code+'). Reconnect to resume.');};}
+function poll(){if(!socket||socket.readyState!==WebSocket.OPEN||fetching||Date.now()-lastFetch<REFRESH_MS)return;requestCandles();}
+function parseCSV(text){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim());if(lines.length<2)throw new Error('CSV has no data rows');const parseLine=line=>{const out=[];let cur='',quoted=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'&&line[i+1]==='"'&&quoted){cur+='"';i++;}else if(ch==='"'){quoted=!quoted;}else if(ch===','&&!quoted){out.push(cur.trim());cur='';}else cur+=ch;}out.push(cur.trim());return out;};const headers=parseLine(lines[0]).map(x=>x.toLowerCase().replace(/[\s-]+/g,'_'));return lines.slice(1).map(parseLine).filter(r=>r.some(v=>v!=='')).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));}
+function parseEpoch(v){const n=Number(v);if(Number.isFinite(n)&&String(v).trim()!==''){if(n>1e12)return n/1000;if(n>1e9)return n;}const d=Date.parse(v);return Number.isFinite(d)?d/1000:NaN;}
+function readCSV(file,callback){if(!file)return;const reader=new FileReader();reader.onload=()=>{try{callback(parseCSV(String(reader.result||'')));}catch(err){alert('CSV import error: '+err.message);}};reader.onerror=()=>alert('Could not read selected CSV file.');reader.readAsText(file);}
+$('tradesFile').addEventListener('change',e=>readCSV(e.target.files[0],rows=>{const parsed=rows.map(r=>({epoch:parseEpoch(r.timestamp||r.time||r.datetime),price:Number(r.price),side:String(r.side||r.aggressor_side||'').toLowerCase(),volume:Number(r.volume||r.size||r.qty)})).filter(x=>Number.isFinite(x.epoch)&&Number.isFinite(x.price)&&Number.isFinite(x.volume)&&x.volume>0&&['buy','sell','bid','ask'].includes(x.side)).map(x=>({...x,side:['buy','ask'].includes(x.side)?'buy':'sell'})).sort((a,b)=>a.epoch-b.epoch);if(!parsed.length){alert('No valid trade rows. Required columns: timestamp, price, side (buy/sell), volume.');return;}tradePrints=parsed;$('footprintSource').textContent='Trade-print CSV loaded';renderFlow();if(candles.length)render();}));
+$('domFile').addEventListener('change',e=>readCSV(e.target.files[0],rows=>{const parsed=rows.map(r=>({epoch:parseEpoch(r.timestamp||r.time||r.datetime),price:Number(r.price),bid:Number(r.bid_size||r.bid||0),ask:Number(r.ask_size||r.ask||0)})).filter(x=>Number.isFinite(x.epoch)&&Number.isFinite(x.price)&&Number.isFinite(x.bid)&&Number.isFinite(x.ask)&&x.bid>=0&&x.ask>=0).sort((a,b)=>a.epoch-b.epoch);if(!parsed.length){alert('No valid DOM rows. Required columns: timestamp, price, bid_size, ask_size.');return;}domSnapshots=parsed;renderFlow();if(candles.length)render();}));
+$('connectBtn').addEventListener('click',connect);$('minScore').addEventListener('change',()=>{if(candles.length)render();});$('newsTime').addEventListener('change',()=>{if(candles.length)render();});$('newsWindow').addEventListener('change',()=>{if(candles.length)render();});window.addEventListener('offline',()=> $status('Device appears offline.'));setInterval(poll,5000);
+</script>
+</body>
+</html>
